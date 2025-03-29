@@ -21,12 +21,15 @@ An autonomous tip.cc collector bot developed from scratch.
 
 - Word Filtering 🚫
 - Auto Transfer of Earnings to Primary Account 💸
-- Smart Delay: The bot waits 1/4 of the drop duration before claiming. ⏳
-- Customizable Delay: Set your own delay time if smart delay is disabled. ⏰
-- Earnings Threshold: Checks if earnings are above a certain amount before claiming. 💰
-- Banned Words List: Avoids claiming drops with specified words. 🙊
-- Drop Type Disabling: Choose to disable any specific drop type. ❌
-- Auto Transfer of All Earnings: Automatically sends all earnings to the primary account. 💼
+- Smart Delay: Wait a configurable fraction of the drop duration before claiming ⏳
+- Customizable Delay: Set your own min-max delay time ranges ⏰
+- Earnings Threshold: Configurable thresholds with percentage chances 💰
+- Server and Channel Whitelists/Blacklists: Control where the bot operates 📋
+- Banned Words List: Avoids claiming drops with specified words 🙊
+- Drop Type Disabling: Choose to disable any specific drop type ❌
+- Random Message Responses: Send customizable messages after claiming drops 💬
+- Telegram Notifications: Get alerts when drops are claimed 📱
+- Per-Server Configurations: Set different settings for different servers 🔧
 
 ## Motivation
 
@@ -41,52 +44,86 @@ This bot was developed to address doubts and accusations of code plagiarism on t
 - Linux: `python3 -m pip install -U -r requirements.txt`
 - Windows: `py -m pip install -U -r requirements.txt`
 <!-- markdownlint-disable-next-line MD029 -->
-4. Update the banned words in `config.json` (Do not modify anything else, configuration happens when you run the script). 📝
-<!-- markdownlint-disable-next-line MD029 -->
-5. Run the script and follow the instructions to start earning! ▶️
+4. Run the script and follow the guided setup process: ▶️
 
 - Linux: `python3 tipcc_autocollect.py`
 - Windows: `py tipcc_autocollect.py`
 
 ## Configuration
 
-- `config.json` contains all the configuration options for the bot. 📁
-- `config.json` is automatically generated when you run the script. 🔄
-- Do not modify `config.json` while the script is running. 🚫
+The bot uses two types of configuration files:
+
+1. `config.json` - Global settings for your account
+2. `servers/default.json` - Default settings for all servers
+3. `servers/{channel_id}.json` - Optional channel-specific settings
+
+The first time you run the script, it will guide you through setting up both configurations.
+
 <!-- markdownlint-disable MD033 -->
 <details>
-<summary>Configuration Options</summary>
+<summary>Global Configuration Options (config.json)</summary>
 
-```py
+```json
 {
-    "TOKEN": "", # Your Discord token
-    "PRESENCE": "", # Your custom presence (online, idle, dnd, invisible)
-    "CPM": 310, # Your average CPM (Characters per minute, find this [here](https://livechat.com/typing-speed-test/))
-    "FIRST": true, # Do not change, just tells the program that you haven't run the script yet
-    "id": 0, # Your main account's Discord ID, the bot will send earnings to this account
-    "channel_id": 0, # The channel ID where you want to send your earnings to your main account in
-    "TARGET_AMOUNT": 0.0, # The amount of earnings you want to reach before transferring to your main account
-    "SMART_DELAY": true, # Whether to use smart delay or not, the bot will wait 1/4 of the drop duration before claiming
-    "DELAY": 1, # The delay in seconds if smart delay is disabled
-    "BANNED_WORDS": [ # The list of banned words, the bot will not claim drops with these words
-        "bot",
-        "ban"
-    ],
-    "WHITELIST": [], # The list of whitelisted guilds, the bot will only claim drops in these guilds
-    "BLACKLIST": [], # The list of blacklisted guilds, the bot will not claim drops in these guilds
-    "CHANNEL_BLACKLIST": [], # The list of blacklisted channels, the bot will not claim drops in these channels
-    "IGNORE_USERS": [], # The list of users to ignore, the bot will not claim drops from these users
-    "WHITELIST_ON": false, # Whether to use the whitelist or not
-    "BLACKLIST_ON": false, # Whether to use the blacklist or not
-    "CHANNEL_BLACKLIST_ON": false, # Whether to use the channel blacklist or not
-    "IGNORE_DROPS_UNDER": 0.0, # The amount of earnings to ignore drops under
-    "IGNORE_TIME_UNDER": 0.0, # The time to ignore drops under
-    "IGNORE_THRESHOLDS": [], # The list of earnings thresholds to ignore drops under
-    "DISABLE_AIRDROP": false, # Whether to disable airdrops or not
-    "DISABLE_TRIVIADROP": false, # Whether to disable triviadrops or not
-    "DISABLE_MATHDROP": false, # Whether to disable mathdrops or not
-    "DISABLE_PHRASEDROP": false, # Whether to disable phrasedrops or not
-    "DISABLE_REDPACKET": false # Whether to disable red packets or not
+    "TOKEN": "",                   // Your Discord token
+    "PRESENCE": "",                // Your presence status (online, idle, dnd, invisible)
+    "FIRST": true,                 // First run flag, automatically changes to false
+    "ID": 0,                       // Your main account's Discord ID
+    "CHANNEL_ID": 0,               // Channel ID where earnings will be sent to your main
+    "TARGET_AMOUNT": 0.0,          // Amount to accumulate before transferring
+    "CPM": [],                     // [Min, Max] typing speed for transferring
+    "WHITELIST": [],               // Server IDs to whitelist
+    "BLACKLIST": [],               // Server IDs to blacklist
+    "WHITELIST_ON": false,         // Enable server whitelist
+    "BLACKLIST_ON": false,         // Enable server blacklist
+    "TELEGRAM": {                  // Telegram notification settings
+        "TOKEN": "",               // Bot token for notifications
+        "CHAT_ID": 0               // Chat ID to send notifications to
+    }
+}
+```
+
+</details>
+
+<details>
+<summary>Server Configuration Options (servers/default.json or servers/{channel_id}.json)</summary>
+
+```json
+{
+    "BANNED_WORDS": [],             // Words that will cause drops to be ignored
+    "MESSAGES": [],                 // Messages to potentially send after claiming
+    "CHANNEL_WHITELIST": [],        // Channel IDs to whitelist
+    "CHANNEL_BLACKLIST": [],        // Channel IDs to blacklist
+    "IGNORE_USERS": [],             // User IDs to ignore drops from
+    "SEND_MESSAGE": false,          // Whether to send messages after claiming
+    "CHANNEL_WHITELIST_ON": false,  // Enable channel whitelist
+    "CHANNEL_BLACKLIST_ON": false,  // Enable channel blacklist
+    "IGNORE_DROPS_UNDER": 0.0,      // Min USD value to consider claiming
+    "IGNORE_TIME_UNDER": 0.0,       // Min time remaining to consider claiming
+    "IGNORE_THRESHOLDS": [],        // Value thresholds with ignore chances
+    
+    // Settings for each drop type (all have similar structure)
+    "AIRDROP": {
+        "ENABLED": true,            // Whether this drop type is enabled
+        "SMART_DELAY": {            // Use relative time-based delay
+            "ENABLED": true,
+            "DELAY": [0.25, 0.50]   // [Min, Max] fraction of remaining time
+        },
+        "RANGE_DELAY": false,       // Use absolute time-based delay
+        "DELAY": [0, 1],            // [Min, Max] seconds to wait
+        "SEND_MESSAGE": false,      // Send message after claiming
+        "MESSAGE_CHANCE": 0.5,      // Chance to send message (0-1)
+        "MESSAGES": [],             // Specific messages for this drop type
+        "IGNORE_DROP_UNDER": 0.0,   // Min value specific to this drop type
+        "IGNORE_TIME_UNDER": 0.0,   // Min time specific to this drop type
+        "IGNORE_THRESHOLDS": []     // Value thresholds specific to this drop type
+    },
+    
+    // Other drop types have the same structure
+    "TRIVIADROP": { /* Same structure as AIRDROP */ },
+    "MATHDROP": { /* Same structure plus CPM setting */ },
+    "PHRASEDROP": { /* Same structure plus CPM setting */ },
+    "REDPACKET": { /* Same structure as AIRDROP */ }
 }
 ```
 

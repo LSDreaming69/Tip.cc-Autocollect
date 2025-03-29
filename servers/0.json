@@ -13,13 +13,20 @@
     "IGNORE_THRESHOLDS": [],
     "AIRDROP": {
         "ENABLED": true,
-        "SMART_DELAY": true,
+        "SMART_DELAY": {
+            "ENABLED": true,
+            "DELAY": [
+                0.25,
+                0.5
+            ]
+        },
         "RANGE_DELAY": false,
         "DELAY": [
             0,
             1
         ],
         "SEND_MESSAGE": false,
+        "MESSAGE_CHANCE": 0.5,
         "MESSAGES": [
             "thanks",
             "thank you",
@@ -31,13 +38,20 @@
     },
     "TRIVIADROP": {
         "ENABLED": true,
-        "SMART_DELAY": true,
+        "SMART_DELAY": {
+            "ENABLED": true,
+            "DELAY": [
+                0.25,
+                0.5
+            ]
+        },
         "RANGE_DELAY": false,
         "DELAY": [
             0,
             1
         ],
         "SEND_MESSAGE": false,
+        "MESSAGE_CHANCE": 0.5,
         "MESSAGES": [
             "thanks",
             "thank you",
@@ -53,13 +67,20 @@
             200,
             310
         ],
-        "SMART_DELAY": true,
+        "SMART_DELAY": {
+            "ENABLED": true,
+            "DELAY": [
+                0.25,
+                0.5
+            ]
+        },
         "RANGE_DELAY": false,
         "DELAY": [
             0,
             1
         ],
         "SEND_MESSAGE": false,
+        "MESSAGE_CHANCE": 0.5,
         "MESSAGES": [
             "thanks",
             "thank you",
@@ -75,13 +96,20 @@
             200,
             310
         ],
-        "SMART_DELAY": true,
+        "SMART_DELAY": {
+            "ENABLED": true,
+            "DELAY": [
+                0.25,
+                0.5
+            ]
+        },
         "RANGE_DELAY": false,
         "DELAY": [
             0,
             1
         ],
         "SEND_MESSAGE": false,
+        "MESSAGE_CHANCE": 0.5,
         "MESSAGES": [
             "thanks",
             "thank you",
@@ -93,13 +121,20 @@
     },
     "REDPACKET": {
         "ENABLED": true,
-        "SMART_DELAY": true,
+        "SMART_DELAY": {
+            "ENABLED": true,
+            "DELAY": [
+                0.25,
+                0.5
+            ]
+        },
         "RANGE_DELAY": false,
         "DELAY": [
             0,
             1
         ],
         "SEND_MESSAGE": false,
+        "MESSAGE_CHANCE": 0.5,
         "MESSAGES": [
             "thanks",
             "thank you",

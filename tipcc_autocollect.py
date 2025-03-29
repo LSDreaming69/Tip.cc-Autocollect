@@ -118,10 +118,15 @@ except (FileNotFoundError, JSONDecodeError):
         "ID": 0,
         "CHANNEL_ID": 0,
         "TARGET_AMOUNT": 0.0,
+        "CPM": [],
         "WHITELIST": [],
         "BLACKLIST": [],
         "WHITELIST_ON": False,
-        "BLACKLIST_ON": False
+        "BLACKLIST_ON": False,
+        "TELEGRAM": {
+            "TOKEN": "",
+            "CHAT_ID": 0
+        }
     }
     with open("config.json", "w") as f:
         dump(config, f, indent=4)
@@ -144,13 +149,17 @@ except (FileNotFoundError, JSONDecodeError):
         "IGNORE_THRESHOLDS": [],
         "AIRDROP": {
             "ENABLED": True,
-            "SMART_DELAY": True,
+            "SMART_DELAY": {
+                "ENABLED": True,
+                "DELAY": [0.25, 0.50]
+            },
             "RANGE_DELAY": False,
             "DELAY": [
                 0,
                 1
             ],
             "SEND_MESSAGE": False,
+            "MESSAGE_CHANCE": 0.5,
             "MESSAGES": [],
             "IGNORE_DROP_UNDER": 0.0,
             "IGNORE_TIME_UNDER": 0.0,
@@ -158,13 +167,17 @@ except (FileNotFoundError, JSONDecodeError):
         },
         "TRIVIADROP": {
             "ENABLED": True,
-            "SMART_DELAY": True,
+            "SMART_DELAY": {
+                "ENABLED": True,
+                "DELAY": [0.25, 0.50]
+            },
             "RANGE_DELAY": False,
             "DELAY": [
                 0,
                 1
             ],
             "SEND_MESSAGE": False,
+            "MESSAGE_CHANCE": 0.5,
             "MESSAGES": [],
             "IGNORE_DROP_UNDER": 0.0,
             "IGNORE_TIME_UNDER": 0.0,
@@ -176,13 +189,17 @@ except (FileNotFoundError, JSONDecodeError):
                 200,
                 310
             ],
-            "SMART_DELAY": True,
+            "SMART_DELAY": {
+                "ENABLED": True,
+                "DELAY": [0.25, 0.50]
+            },
             "RANGE_DELAY": False,
             "DELAY": [
                 0,
                 1
             ],
             "SEND_MESSAGE": False,
+            "MESSAGE_CHANCE": 0.5,
             "MESSAGES": [],
             "IGNORE_DROP_UNDER": 0.0,
             "IGNORE_TIME_UNDER": 0.0,
@@ -194,13 +211,17 @@ except (FileNotFoundError, JSONDecodeError):
                 200,
                 310
             ],
-            "SMART_DELAY": True,
+            "SMART_DELAY": {
+                "ENABLED": True,
+                "DELAY": [0.25, 0.50]
+            },
             "RANGE_DELAY": False,
             "DELAY": [
                 0,
                 1
             ],
             "SEND_MESSAGE": False,
+            "MESSAGE_CHANCE": 0.5,
             "MESSAGES": [],
             "IGNORE_DROP_UNDER": 0.0,
             "IGNORE_TIME_UNDER": 0.0,
@@ -208,13 +229,17 @@ except (FileNotFoundError, JSONDecodeError):
         },
         "REDPACKET": {
             "ENABLED": True,
-            "SMART_DELAY": True,
+            "SMART_DELAY": {
+                "ENABLED": True,
+                "DELAY": [0.25, 0.50]
+            },
             "RANGE_DELAY": False,
             "DELAY": [
                 0,
                 1
             ],
             "SEND_MESSAGE": False,
+            "MESSAGE_CHANCE": 0.5,
             "MESSAGES": [],
             "IGNORE_DROP_UNDER": 0.0,
             "IGNORE_TIME_UNDER": 0.0,
@@ -298,15 +323,27 @@ if config["FIRST"]:
         ).ask()
     )
     config["CHANNEL_ID"] = channel_id
-    target_amount = float(
-        text(
-            "What is the target amount you want to tip your main at? Set it to 0 to disable.",
-            validate=lambda x: validate_decimal(x) or x.isnumeric(),
-            default="0",
+    if channel_id != 1:
+        target_amount = float(
+            text(
+                "What is the target amount you want to tip your main at? Set it to 0 to disable.",
+                validate=lambda x: validate_decimal(x) or x.isnumeric(),
+                default="0",
+                qmark="->",
+            ).ask()
+        )
+        config["TARGET_AMOUNT"] = target_amount
+        cpm = text(
+            f"What is the minimum CPM you want to use for tipping?",
+            validate=lambda x: x.isnumeric() and 0 <= int(x) <= 10000,
             qmark="->",
         ).ask()
-    )
-    config["TARGET_AMOUNT"] = target_amount
+        cpm_max = text(
+            f"What is the maximum CPM you want to use for tipping?",
+            validate=lambda x: x.isnumeric() and 0 <= int(x) <= 10000,
+            qmark="->",
+        ).ask()
+        config["CPM"] = [int(cpm), int(cpm_max)]
     enable_whitelist = select(
         "Do you want to enable server whitelist?",
         choices=["yes", "no"],
@@ -350,6 +387,24 @@ if config["FIRST"]:
             else:
                 blacklist = [int(x) for x in blacklist.split(",")]
             config["BLACKLIST"] = blacklist
+    tg = select(
+        "Do you want to enable telegram notifications?",
+        choices=["yes", "no"],
+        qmark="->",
+    ).ask()
+    if tg == "yes":
+        tg_token = text(
+            "What is your telegram bot token?",
+            validate=lambda x: len(x) > 0,
+            qmark="->",
+        ).ask()
+        tg_chat_id = text(
+            "What is your telegram chat id?",
+            validate=lambda x: x.isnumeric() and 17 <= len(x) <= 19,
+            qmark="->",
+        ).ask()
+        config["TELEGRAM"]["TOKEN"] = tg_token
+        config["TELEGRAM"]["CHAT_ID"] = int(tg_chat_id)
     with open("config.json", "w") as f:
         dump(config, f, indent=4)
     logger.debug("Config saved.")
@@ -491,9 +546,20 @@ if config["FIRST"]:
             qmark="->",
         ).ask()
         if smart_delay == "yes":
-            default[drop.upper()]["SMART_DELAY"] = True
+            default[drop.upper()]["SMART_DELAY"]["ENABLED"] = True
+            min_delay = text(
+                f"Enter the MINIMUM fraction of remaining drop time to wait (e.g., 0.25 means waiting at least 25% of the remaining time)",
+                validate=lambda x: (validate_decimal(x) or x.isnumeric()) and 0 <= float(x) <= 1,
+                qmark="->",
+            ).ask()
+            max_delay = text(
+                f"Enter the MAXIMUM fraction of remaining drop time to wait (e.g., 0.5 means waiting up to 50% of the remaining time)",
+                validate=lambda x: (validate_decimal(x) or x.isnumeric()) and 0 <= float(x) <= 1,
+                qmark="->",
+            ).ask()
+            default[drop.upper()]["SMART_DELAY"]["DELAY"] = [float(min_delay), float(max_delay)]
         else:
-            default[drop.upper()]["SMART_DELAY"] = False
+            default[drop.upper()]["SMART_DELAY"]["ENABLED"] = False
             range_delay = select(
                 f"Do you want to enable range delay for {drop}?",
                 choices=["yes", "no"],
@@ -530,6 +596,13 @@ if config["FIRST"]:
         ).ask()
         default[drop.upper()]["SEND_MESSAGE"] = send_messages == "yes"
         if default[drop.upper()]["SEND_MESSAGE"]:
+            message_chance = text(
+                f"What is the chance you want to send a message after claiming a {drop}? (e.g., 0.5 for 50%)",
+                validate=lambda x: (validate_decimal(x) or x.isnumeric()) and 0 <= float(x) <= 1,
+                default="0.5",
+                qmark="->",
+            ).ask()
+            default[drop.upper()]["MESSAGE_CHANCE"] = float(message_chance)
             messages = text(
                 f"What messages do you want to send after claiming a {drop}? Separate each message with a comma.",
                 validate=lambda x: len(x) > 0 or x == "",
@@ -659,7 +732,7 @@ async def tipping():
             else:
                 content = f"$tip <@{config['ID']}> all {crypto.name.replace('*', '')}"
             async with channel.typing():
-                await sleep(len(content) / randint(default["CPM"][0], default["CPM"][1]) * 60)
+                await sleep(len(content) / randint(config["CPM"][0], config["CPM"][1]) * 60)
             await channel.send(content)
             logger.debug(f"Sent tip: {content}")
         if button_disabled:
@@ -678,12 +751,31 @@ async def tipping():
             await button.click()
             await sleep(1)
             answer = await channel.fetch_message(answer.id)
+    await telegram(f"Tipped {config['ID']} {total_money} in {answer.channel.name}.")
 
 
 @tipping.before_loop
 async def before_tipping():
     logger.info("Waiting for bot to be ready before tipping starts...")
     await client.wait_until_ready()
+
+
+async def telegram(message: str):
+    if config.get("TELEGRAM", {}).get("TOKEN") and config.get("TELEGRAM", {}).get("CHAT_ID"):
+        try:
+            async with ClientSession() as session:
+                async with session.post(f"https://api.telegram.org/bot{config['TELEGRAM']['TOKEN']}/sendMessage", json={
+                    "chat_id": config["TELEGRAM"]["CHAT_ID"],
+                    "text": message,
+                    "parse_mode": "Markdown"}
+                                        ) as response:
+                    if response.status == 200:
+                        logger.debug(f"Telegram notification sent: {message}")
+                    else:
+                        response_text = await response.text()
+                        logger.warning(f"Failed to send Telegram notification: {response_text}")
+        except Exception as e:
+            logger.exception(f"Error sending Telegram notification: {e}")
 
 
 @client.event
@@ -836,14 +928,17 @@ async def on_message(original_message: Message):
                 f"Ignored drop for {embed.description.split('**')[1]} {embed.description.split('**')[2].split(')')[0].replace(' (', '')}"
             )
             return
-        if (configuration[droptype]["DELAY"] != [0, 0] or configuration[droptype]["SMART_DELAY"] or
+        if (configuration[droptype]["DELAY"] != [0, 0] or configuration[droptype]["SMART_DELAY"]["ENABLED"] or
                 configuration[droptype]["RANGE_DELAY"]):
-            if configuration[droptype]["SMART_DELAY"]:
+            if configuration[droptype]["SMART_DELAY"]["ENABLED"]:
                 logger.debug("Smart delay enabled, waiting...")
                 if drop_ends_in < 0:
                     logger.debug("Drop ended, skipping...")
                     return
-                delay = drop_ends_in / 4
+                delay = drop_ends_in * uniform(
+                    configuration[droptype]["SMART_DELAY"]["DELAY"][0],
+                    configuration[droptype]["SMART_DELAY"]["DELAY"][1]
+                )
                 logger.debug(f"Delay: {round(delay, 2)}")
                 await sleep(delay)
                 logger.info(f"Waited {round(delay, 2)} seconds before proceeding.")
@@ -875,6 +970,8 @@ async def on_message(original_message: Message):
                     logger.info(
                         f"Entered airdrop in {original_message.channel.name} for {embed.description.split('**')[1]} {embed.description.split('**')[2].split(')')[0].replace(' (', '')}"
                     )
+                    await telegram(
+                        f"💰 **Drop Entered**\nType: Airdrop\nServer: {original_message.guild.name}\nChannel: {original_message.channel.name}\nAmount: {money} USD")
                 else:
                     logger.exception("Button label not found, skipping...")
                     return
@@ -897,6 +994,8 @@ async def on_message(original_message: Message):
                     logger.info(
                         f"Entered phrasedrop in {original_message.channel.name} for {embed.description.split('**')[1]} {embed.description.split('**')[2].split(')')[0].replace(' (', '')}"
                     )
+                    await telegram(
+                        f"💰 **Drop Entered**\nType: Phrasedrop\nServer: {original_message.guild.name}\nChannel: {original_message.channel.name}\nAmount: {money} USD")
             elif droptype == "REDPACKET":
                 logger.debug("Redpacket detected, claiming...")
                 try:
@@ -911,6 +1010,8 @@ async def on_message(original_message: Message):
                     logger.info(
                         f"Claimed envelope in {original_message.channel.name} for {embed.description.split('**')[1]} {embed.description.split('**')[2].split(')')[0].replace(' (', '')}"
                     )
+                    await telegram(
+                        f"💰 **Drop Entered**\nType: Redpacket/Envelope\nServer: {original_message.guild.name}\nChannel: {original_message.channel.name}\nAmount: {money} USD")
                 else:
                     logger.exception("Button label not found, skipping...")
                     return
@@ -929,7 +1030,7 @@ async def on_message(original_message: Message):
                     if isinstance(answer, float) and answer.is_integer():
                         answer = int(answer)
                     logger.debug(f"Answer: {answer}")
-                    if not configuration[droptype]["SMART_DELAY"] and configuration[droptype]["DELAY"] == 0:
+                    if not configuration[droptype]["SMART_DELAY"]["ENABLED"] and configuration[droptype]["DELAY"] == 0:
                         length = len(str(answer)) / randint(configuration[droptype]["CPM"][0],
                                                             configuration[droptype]["CPM"][1]) * 60
                         async with original_message.channel.typing():
@@ -938,6 +1039,8 @@ async def on_message(original_message: Message):
                     logger.info(
                         f"Entered mathdrop in {original_message.channel.name} for {embed.description.split('**')[1]} {embed.description.split('**')[2].split(')')[0].replace(' (', '')}"
                     )
+                    await telegram(
+                        f"💰 **Drop Entered**\nType: Mathdrop\nServer: {original_message.guild.name}\nChannel: {original_message.channel.name}\nAmount: {money} USD")
             elif droptype == "TRIVIADROP":
                 logger.debug("Triviadrop detected, entering...")
                 category = embed.title.split("Trivia time - ")[1].strip()
@@ -972,6 +1075,8 @@ async def on_message(original_message: Message):
                                 logger.info(
                                     f"Entered triviadrop in {original_message.channel.name} for {embed.description.split('**')[1]} {embed.description.split('**')[2].split(')')[0].replace(' (', '')}"
                                 )
+                                await telegram(
+                                    f"💰 **Drop Entered**\nType: Triviadrop\nServer: {original_message.guild.name}\nChannel: {original_message.channel.name}\nAmount: {money} USD")
                                 break
                         if not entered:
                             logger.exception("Question not found in database, skipping...")
@@ -980,6 +1085,10 @@ async def on_message(original_message: Message):
                 logger.debug(f"Drop type non existent?!, skipping...\n{embed.title}")
                 return
             if configuration[droptype]["SEND_MESSAGE"]:
+                if randint(0, 100) < configuration[droptype]["MESSAGE_CHANCE"] * 100:
+                    logger.debug("Not sending message...")
+                    return
+                logger.debug("Sending message...")
                 message = configuration[droptype]["MESSAGES"][
                     randint(0, len(configuration[droptype]["MESSAGES"]) - 1)
                 ]

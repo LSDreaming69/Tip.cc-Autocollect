@@ -5,8 +5,13 @@
     "ID": 0,
     "CHANNEL_ID": 0,
     "TARGET_AMOUNT": 0.0,
+    "CPM": [],
     "WHITELIST": [],
     "BLACKLIST": [],
     "WHITELIST_ON": false,
-    "BLACKLIST_ON": false
+    "BLACKLIST_ON": false,
+    "TELEGRAM": {
+        "TOKEN": "",
+        "CHAT_ID": 0
+    }
 }
