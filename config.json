@@ -1,21 +1,21 @@
 {
     "TOKEN": "",
-    "PRESENCE": "",
-    "CPM": [200, 310],
-    "FIRST": true,
-    "id": 0,
-    "channel_id": 0,
+    "PRESENCE": "invisible",
+    "CPM": [
+        200,
+        310
+    ],
+    "FIRST": false,
+    "id": 813198377935699999,
+    "channel_id": 1,
     "TARGET_AMOUNT": 0.0,
     "SMART_DELAY": true,
     "RANGE_DELAY": false,
     "DELAY": [
-        0,
-        1
+        2,
+        5
     ],
-    "BANNED_WORDS": [
-        "bot",
-        "ban"
-    ],
+    "BANNED_WORDS": [],
     "MESSAGES": [
         "thanks",
         "thank you",
@@ -31,13 +31,13 @@
     "SEND_MESSAGE": false,
     "CHANNEL_WHITELIST_ON": false,
     "CHANNEL_BLACKLIST_ON": false,
-    "IGNORE_DROPS_UNDER": 0.0,
-    "IGNORE_TIME_UNDER": 0.0,
+    "IGNORE_DROPS_UNDER": 0.99,
+    "IGNORE_TIME_UNDER": 2.0,
     "IGNORE_THRESHOLDS": [],
     "DISABLE_AIRDROP": false,
-    "DISABLE_TRIVIADROP": false,
-    "DISABLE_MATHDROP": false,
-    "DISABLE_PHRASEDROP": false,
+    "DISABLE_TRIVIADROP": true,
+    "DISABLE_MATHDROP": true,
+    "DISABLE_PHRASEDROP": true,
     "DISABLE_REDPACKET": false,
     "DELAY_AIRDROP": true,
     "DELAY_TRIVIADROP": true,
